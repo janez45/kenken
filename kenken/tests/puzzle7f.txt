@@ -1,0 +1,27 @@
+7
+5 2 b b b c c
+d d e f g g h
+i j e f k l h
+i j m m k l n
+o o p p q r n
+3 7 2 5 q r u
+4 5 6 1 v v u
+b 168 *
+c 3 /
+d 3 -
+e 9 +
+f 6 *
+g 1 -
+h 5 -
+i 1 -
+j 3 /
+k 7 +
+l 5 -
+m 12 *
+n 9 +
+o 3 /
+p 7 *
+q 3 /
+r 9 +
+u 2 /
+v 14 *
