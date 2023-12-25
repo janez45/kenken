@@ -66,11 +66,33 @@ typedef struct
     the puzzle itself, tracking the board and constraints, as well
     as the size/length of both
      */
-    unsigned int boardSize;      // nat
-    unsigned int constraintsLen; // nat
+    unsigned int boardSize;      // boardSize by boardSizes
+    unsigned int constraintsLen; // number of constraints
     entry **board;               // array of (array of (entry))
     constraint *constraints;     // array of (constraint)
 } puzzle;
+
+/*
+    Example:
+    puzzle {4, 9,
+     {{'a', 'b', 'b', 'c'},
+      {'a', 'd', 'e', 'e'},
+      {'f', 'd', 'g', 'g'},
+      {'f', 'h', 'i', 'i'}},
+     {{'a', 6, '*'},
+      {'b', 3, '-'},
+      {'c', 3, '='},
+      {'d', 5, '+'},
+      {'e', 3, '-'},
+      {'f', 3, '-'},
+      {'g', 2, '/'},
+      {'h', 4, '='},
+      {'i', 1, '-'}}
+}
+
+- a 4x4 matrix
+- 9 constraints
+*/
 
 typedef struct
 {
@@ -135,7 +157,7 @@ puzzle puzzle_init(puzzle *puz, int boardSize, int constraintsLen)
     /*
     function to initialize a puzzle
      */
-    puz->boardSize = boardSize;
+    puz->boardSize = boardSize; // initializes the boardsize and constraintsLen
     puz->constraintsLen = constraintsLen;
     if (puz->boardSize < 1)
     {
@@ -143,6 +165,7 @@ puzzle puzzle_init(puzzle *puz, int boardSize, int constraintsLen)
     }
     else
     {
+        // allocate an array of 4 boardSize pointers (to create four entry arrays)
         puz->board = calloc(boardSize, sizeof(entry *));
         for (int i = 0; i < boardSize; ++i)
         {
@@ -155,7 +178,7 @@ puzzle puzzle_init(puzzle *puz, int boardSize, int constraintsLen)
     }
     else
     {
-        puz->constraints = calloc(constraintsLen, sizeof(constraint));
+        puz->constraints = calloc(constraintsLen, sizeof(constraint)); // allocate an array of constraints
     }
     return *puz;
 }
@@ -524,8 +547,65 @@ posn find_blank(puzzle *puz)
     returns the position of the first blank space in puz.
     If no cells are blank, return {-2, -2}
     If the first constraint has only guesses on the board,
-    find_blank returns {-1, -1}.
+    find_blank returns {-1, }.
     */
+
+    /*
+        Guess: Official number is zero, guess is true, c is a letter, guess number exists
+        Given: Official number is nonzero, guess is false
+        Empty: Official number is zero, guess is false
+    */
+    posn blankPos = {-1, -1};
+    if (puz->constraintsLen > 0)
+    {
+        char firstConstraintChar;
+        firstConstraintChar = puz->constraints[0].letter;
+        printf("%c\n", firstConstraintChar);     // testing
+        for (int i = 0; i < puz->boardSize; i++) // row i
+        {
+            for (int j = 0; j < puz->boardSize; j++) // column j
+            {
+
+                if (!puz->board[i][j].guess) // if it's not a guess
+                {
+                    if (!puz->board[i][j].number) // if there's no official number either? It's empty
+                    {
+                        blankPos.x = i;
+                        blankPos.y = j;
+                        printf("{%d,%d}\n", blankPos.x, blankPos.y);
+                        return blankPos;
+                    }
+                    else if (puz->board[i][j].letter == firstConstraintChar)
+                    {
+                        printf("We found something off\n");
+                        blankPos.x = -2;
+                        blankPos.y = -2;
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        blankPos.x = -2;
+        blankPos.y = -2;
+        for (int i = 0; i < puz->boardSize; i++) // row i
+        {
+            for (int j = 0; j < puz->boardSize; j++) // column j
+            {
+
+                if (!puz->board[i][j].guess && !puz->board[i][j].number) // if it's not a guess
+                {
+
+                    blankPos.x = i;
+                    blankPos.y = j;
+                    return blankPos;
+                }
+            }
+        }
+    }
+    // printf("{%d,%d}\n", blankPos.x, blankPos.y);
+    return blankPos;
 }
 
 // b)
@@ -1229,6 +1309,7 @@ bool testing_a(void)
         puzzle_destroy(&p1);
         return false;
     }
+    printf("Clear 1\n");
     puzzle_destroy(&p1);
 
     // test case 2
@@ -1239,16 +1320,18 @@ bool testing_a(void)
         puzzle_destroy(&p2);
         return false;
     }
+    printf("Clear 2\n");
     puzzle_destroy(&p2);
 
     // test case 3
     puzzle p3 = read_puzzle_from_file("puzzle1partial1.txt");
-    posn blank3 = find_blank(&p3);
+    posn blank3 = find_blank(&p3); // hmmmmmmmmmm
     if (blank3.x != -1 || blank3.y != -1)
     {
         puzzle_destroy(&p3);
         return false;
     }
+    printf("Clear 3\n");
     puzzle_destroy(&p3);
 
     return true;
