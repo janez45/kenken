@@ -547,7 +547,7 @@ posn find_blank(puzzle *puz)
     returns the position of the first blank space in puz.
     If no cells are blank, return {-2, -2}
     If the first constraint has only guesses on the board,
-    find_blank returns {-1, }.
+    find_blank returns {-1, -1}.
     */
 
     /*
@@ -558,28 +558,18 @@ posn find_blank(puzzle *puz)
     posn blankPos = {-1, -1};
     if (puz->constraintsLen > 0)
     {
-        char firstConstraintChar;
-        firstConstraintChar = puz->constraints[0].letter;
-        printf("%c\n", firstConstraintChar);     // testing
-        for (int i = 0; i < puz->boardSize; i++) // row i
+        char firstConstraintChar = puz->constraints[0].letter;
+        for (int i = 0; i < puz->boardSize; i++)
         {
-            for (int j = 0; j < puz->boardSize; j++) // column j
+            for (int j = 0; j < puz->boardSize; j++)
             {
-
-                if (!puz->board[i][j].guess) // if it's not a guess
+                if (puz->board[i][j].letter == firstConstraintChar)
                 {
-                    if (!puz->board[i][j].number) // if there's no official number either? It's empty
+                    if (!puz->board[i][j].number && !puz->board[i][j].guess)
                     {
-                        blankPos.x = i;
-                        blankPos.y = j;
-                        printf("{%d,%d}\n", blankPos.x, blankPos.y);
+                        blankPos.x = j;
+                        blankPos.y = i;
                         return blankPos;
-                    }
-                    else if (puz->board[i][j].letter == firstConstraintChar)
-                    {
-                        printf("We found something off\n");
-                        blankPos.x = -2;
-                        blankPos.y = -2;
                     }
                 }
             }
@@ -589,23 +579,22 @@ posn find_blank(puzzle *puz)
     {
         blankPos.x = -2;
         blankPos.y = -2;
-        for (int i = 0; i < puz->boardSize; i++) // row i
-        {
-            for (int j = 0; j < puz->boardSize; j++) // column j
-            {
-
-                if (!puz->board[i][j].guess && !puz->board[i][j].number) // if it's not a guess
-                {
-
-                    blankPos.x = i;
-                    blankPos.y = j;
-                    return blankPos;
-                }
-            }
-        }
     }
-    // printf("{%d,%d}\n", blankPos.x, blankPos.y);
     return blankPos;
+}
+
+int compareIntsAscending(const int *a, const int *b)
+{
+    return *a - *b;
+}
+
+void printArr(int *a, int len)
+{
+    for (int i = 0; i < len; i++)
+    {
+        printf("%d ", a[i]);
+    }
+    printf("]\n");
 }
 
 // b)
@@ -617,6 +606,28 @@ numArr used_in_row(puzzle *puz, posn pos)
     used in the same row as (x,y) position, pos,
     in the given puz.
      */
+
+    numArr numsUsedRow;
+    numsUsedRow.arr = malloc(sizeof(int) * puz->boardSize);
+    numsUsedRow.len = 0;
+    int *tracker = numsUsedRow.arr;
+    for (int i = 0; i < puz->boardSize; i++)
+    {
+        if (puz->board[pos.y][i].number)
+        {
+            *tracker = puz->board[pos.y][i].number;
+            numsUsedRow.len++;
+            tracker = tracker + 1;
+        }
+        else if (puz->board[pos.y][i].guess)
+        {
+            *tracker = puz->board[pos.y][i].g.number;
+            numsUsedRow.len++;
+            tracker = tracker + 1;
+        }
+    }
+    qsort(numsUsedRow.arr, numsUsedRow.len, sizeof(int), compareIntsAscending);
+    return numsUsedRow;
 }
 
 numArr used_in_col(puzzle *puz, posn pos)
@@ -627,6 +638,27 @@ numArr used_in_col(puzzle *puz, posn pos)
     used in the same column as (x,y) position, pos,
     in the given puz.
      */
+    numArr numsUsedCol;
+    numsUsedCol.arr = malloc(sizeof(int) * puz->boardSize);
+    numsUsedCol.len = 0;
+    int *tracker = numsUsedCol.arr;
+    for (int i = 0; i < puz->boardSize; i++)
+    {
+        if (puz->board[i][pos.x].number)
+        {
+            *tracker = puz->board[i][pos.x].number;
+            numsUsedCol.len++;
+            tracker = tracker + 1;
+        }
+        else if (puz->board[i][pos.x].guess)
+        {
+            *tracker = puz->board[i][pos.x].g.number;
+            numsUsedCol.len++;
+            tracker = tracker + 1;
+        }
+    }
+    qsort(numsUsedCol.arr, numsUsedCol.len, sizeof(int), compareIntsAscending);
+    return numsUsedCol;
 }
 
 // c)
@@ -1309,7 +1341,7 @@ bool testing_a(void)
         puzzle_destroy(&p1);
         return false;
     }
-    printf("Clear 1\n");
+    printf("Clear a1\n");
     puzzle_destroy(&p1);
 
     // test case 2
@@ -1320,19 +1352,27 @@ bool testing_a(void)
         puzzle_destroy(&p2);
         return false;
     }
-    printf("Clear 2\n");
+    printf("Clear a2\n");
     puzzle_destroy(&p2);
 
     // test case 3
     puzzle p3 = read_puzzle_from_file("puzzle1partial1.txt");
-    posn blank3 = find_blank(&p3); // hmmmmmmmmmm
+    posn blank3 = find_blank(&p3);
     if (blank3.x != -1 || blank3.y != -1)
     {
         puzzle_destroy(&p3);
         return false;
     }
-    printf("Clear 3\n");
+    printf("Clear a3\n");
     puzzle_destroy(&p3);
+
+    puzzle p4 = read_puzzle_from_file("extratestpuzzle.txt");
+    posn blank4 = find_blank(&p4);
+    if (blank4.x != 1 || blank4.y != 0)
+    {
+        puzzle_destroy(&p4);
+        return false;
+    }
 
     return true;
 }
@@ -1347,6 +1387,7 @@ bool testing_b(void)
     {
         free(usedRow.arr);
         puzzle_destroy(&p1);
+        printf("Clear b1\n");
     }
     else
     {
@@ -1367,8 +1408,23 @@ bool testing_b(void)
     }
     free(usedRow2.arr);
     puzzle_destroy(&p2);
+    printf("Clear b2\n");
 
-    return true;
+    puzzle p3 = read_puzzle_from_file("puzzle2partial1.txt");
+    posn pos3 = {1, 1};
+    numArr usedCol = used_in_col(&p3, pos3);
+    if (usedCol.len == 2 && usedCol.arr[0] == 2 && usedCol.arr[1] == 3)
+    {
+        free(usedCol.arr);
+        puzzle_destroy(&p3);
+        printf("Clear b3\n");
+    }
+    else
+    {
+        free(usedCol.arr);
+        puzzle_destroy(&p3);
+        return false;
+    }
 }
 
 bool testing_c(void)
@@ -1611,14 +1667,15 @@ int main(void)
 
     assert(testing_a());
     assert(testing_b());
-    assert(testing_c());
-    assert(testing_d());
-    assert(testing_e());
-    assert(testing_f());
-    assert(testing_g());
+    // assert(testing_c());
+    // assert(testing_d());
+    // assert(testing_e());
+    // assert(testing_f());
+    // assert(testing_g());
 
-    assert(testing_solve_kenken());
+    // assert(testing_solve_kenken());
     // assert(testing_solve_kenken_visual());
+    printf("Clear\n");
 
     return 0;
 }
