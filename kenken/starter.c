@@ -583,9 +583,9 @@ posn find_blank(puzzle *puz)
     return blankPos;
 }
 
-int compareIntsAscending(const int *a, const int *b)
+int compareIntsAscending(const void *a, const void *b)
 {
-    return *a - *b;
+    return (*(int *)a - *(int *)b);
 }
 
 void printArr(int *a, int len)
@@ -607,6 +607,10 @@ numArr used_in_row(puzzle *puz, posn pos)
     in the given puz.
      */
 
+    /*
+        NOTE: This method and the one below also count the guess of the current element. May require changing depending
+        on the rest of the program.
+    */
     numArr numsUsedRow;
     numsUsedRow.arr = malloc(sizeof(int) * puz->boardSize);
     numsUsedRow.len = 0;
@@ -669,6 +673,59 @@ numArr available_vals(puzzle *puz, posn pos)
     (through a struct called numArr) for the (x,y) position, pos,
     of the consumed puzzle, puz.
      */
+
+    /*
+        WARNING: This method only works for
+    */
+    int arr[puz->boardSize + 1];
+    for (int i = 0; i <= puz->boardSize; i++)
+    {
+        arr[i] = 0;
+    }
+    numArr invalidRow = used_in_row(puz, pos);
+    numArr invalidCol = used_in_col(puz, pos);
+    int numValid = puz->boardSize;
+    int max = (invalidRow.len > invalidCol.len) ? invalidRow.len : invalidCol.len;
+    for (int i = 0; i < max; i++)
+    {
+        if (i < invalidRow.len)
+        {
+            if (!arr[invalidRow.arr[i]])
+            {
+                numValid--;
+            }
+            arr[invalidRow.arr[i]]++;
+        }
+        if (i < invalidCol.len)
+        {
+            if (!arr[invalidCol.arr[i]])
+            {
+                numValid--;
+            }
+            arr[invalidCol.arr[i]]++;
+        }
+    }
+
+    numArr validNums;
+    validNums.len = numValid;
+    if (validNums.len > 0)
+    {
+        validNums.arr = malloc(sizeof(int) * numValid);
+        int *ptr = validNums.arr;
+        for (int i = 1; i <= puz->boardSize; i++)
+        {
+            if (!arr[i])
+            {
+                *ptr = i;
+                ptr++;
+            }
+        }
+    }
+    else
+    {
+        validNums.arr = NULL;
+    }
+    return validNums;
 }
 
 // d)
@@ -680,9 +737,9 @@ entry **place_guess(puzzle *puz, posn pos, int val)
      */
     // should return a clean new copy without aliasing
     entry **board = board_deep_copy(puz);
-
-    // Complete your code here....
-
+    board[pos.y][pos.x].guess = true;
+    board[pos.y][pos.x].g.letter = board[pos.y][pos.x].letter;
+    board[pos.y][pos.x].g.number = val;
     return board;
 }
 
@@ -1461,6 +1518,22 @@ bool testing_c(void)
         return false;
     }
 
+    // printf("Clear up to here\n");
+    // puzzle p3 = read_puzzle_from_file("puzzle3partial2.txt");
+    // posn pos3 = {3, 5};
+    // numArr available3 = available_vals(&p3, pos3);
+    // if (available3.len == 1 && available3.arr[0] == 6)
+    // {
+    //     free(available3.arr);
+    //     puzzle_destroy(&p3);
+    // }
+    // else
+    // {
+    //     printf("available3.len = %d\n", available3.len);
+    //     free(available3.arr);
+    //     puzzle_destroy(&p3);
+    //     return false;
+    // }
     return true;
 }
 
@@ -1480,7 +1553,7 @@ bool testing_d(void)
         puzzle_destroy(&p1);
         return false;
     }
-
+    printf("Clear d\n");
     return true;
 }
 
@@ -1667,8 +1740,8 @@ int main(void)
 
     assert(testing_a());
     assert(testing_b());
-    // assert(testing_c());
-    // assert(testing_d());
+    assert(testing_c());
+    assert(testing_d());
     // assert(testing_e());
     // assert(testing_f());
     // assert(testing_g());
