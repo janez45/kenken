@@ -764,6 +764,94 @@ bool guess_valid(puzzle *puz)
     determines if the guesses in puz satisfy their constrain
      */
 
+    if (puz->constraintsLen > 0)
+    {
+        char constraintLetter = puz->constraints[0].letter;
+        char operator= puz->constraints[0].symbol;
+        unsigned int target = puz->constraints[0].number;
+        // printf("Letter: %c, Operator: %c, Target: %u\n", constraintLetter, operator, target);
+        if (operator== '+')
+        {
+            unsigned int sum = 0;
+            for (int i = 0; i < puz->boardSize; i++)
+            {
+                for (int j = 0; j < puz->boardSize; j++)
+                {
+                    if (puz->board[i][j].guess && puz->board[i][j].letter == constraintLetter)
+                    {
+                        sum += puz->board[i][j].g.number;
+                    }
+                }
+            }
+            // printf("Sum = %d\n", sum);
+            return sum == target;
+        }
+        else if (operator== '*')
+        {
+            // printf("Multiplication\n");
+            unsigned int product = 0;
+            for (int i = 0; i < puz->boardSize; i++)
+            {
+                for (int j = 0; j < puz->boardSize; j++)
+                {
+                    if (puz->board[i][j].guess && puz->board[i][j].letter == constraintLetter)
+                    {
+                        if (product == 0)
+                        {
+                            product = puz->board[i][j].g.number;
+                        }
+                        else
+                        {
+                            product *= puz->board[i][j].g.number;
+                        }
+                    }
+                }
+            }
+            // printf("product is %d\n", product);
+            return product == target;
+        }
+        else if (operator== '-')
+        {
+            // printf("Subtraction\n");
+            int values[2];
+            int *ptr = values;
+            for (int i = 0; i < puz->boardSize; i++)
+            {
+                for (int j = 0; j < puz->boardSize; j++)
+                {
+                    if (puz->board[i][j].guess && puz->board[i][j].letter == constraintLetter)
+                    {
+                        *ptr = puz->board[i][j].g.number;
+                        ptr++;
+                    }
+                }
+            }
+            return abs(values[0] - values[1]) == target;
+        }
+        else // division
+        {
+            // printf("Division\n");x
+            unsigned int values[2];
+            unsigned int *ptr = values;
+            for (int i = 0; i < puz->boardSize; i++)
+            {
+                for (int j = 0; j < puz->boardSize; j++)
+                {
+                    if (puz->board[i][j].guess && puz->board[i][j].letter == constraintLetter)
+                    {
+                        *ptr = puz->board[i][j].g.number;
+                        ptr++;
+                    }
+                }
+            }
+            return (values[0] % values[1] == 0 && values[0] / values[1] == target) || (values[1] % values[0] == 0 && values[1] / values[0] == target);
+        }
+    }
+    else
+    {
+        return true; // or false if needed
+    }
+
     // get a list of all the guessed numbers
 }
 
@@ -774,6 +862,27 @@ done using malloc by reallocating a new array and
 copying the elements after the first over.
 then use it to solve apply_guess
 */
+void printConstraint(constraint c)
+{
+    printf("{%c, %d, %c}\n", c.letter, c.number, c.symbol);
+}
+
+void popFirstConstraint(puzzle *puz)
+{
+    if (puz->constraintsLen > 0)
+    {
+        constraint *newConstraints = malloc(sizeof(constraint) * (puz->constraintsLen - 1));
+        for (int i = 0; i < puz->constraintsLen - 1; i++)
+        {
+            newConstraints[i] = constraint_create(puz->constraints[i + 1].letter, puz->constraints[i + 1].number, puz->constraints[i + 1].symbol);
+            printConstraint(newConstraints[i]); // testing line
+        }
+        free(puz->constraints);
+        puz->constraintsLen--;
+        printf("Constraintslen = %d\n", puz->constraintsLen);
+        puz->constraints = newConstraints;
+    }
+}
 
 puzzle apply_guess(puzzle *puz)
 {
@@ -784,7 +893,23 @@ puzzle apply_guess(puzzle *puz)
     puzzle new = puzzle_deep_copy(puz);
 
     // Complete your code here....
-
+    // ASSUMING ALL GUESSES ARE JUST THAT OF THE FIRST CONSTRAINT
+    for (int i = 0; i < new.boardSize; i++)
+    {
+        for (int j = 0; j < new.boardSize; j++)
+        {
+            if (new.board[i][j].guess)
+            {
+                printf("Guess at i = %d, j = %d\n", i, j);
+                new.board[i][j].letter = '0';
+                new.board[i][j].number = puz->board[i][j].g.number;
+                new.board[i][j].guess = false;
+                new.board[i][j].g.letter = '0';
+                new.board[i][j].g.number = 0;
+            }
+        }
+    }
+    popFirstConstraint(&new);
     return new;
 }
 
@@ -1559,6 +1684,7 @@ bool testing_d(void)
 
 bool testing_e(void)
 {
+    printf("Starting e\n");
     // test case 1
     puzzle p1 = read_puzzle_from_file("puzzle1partial1.txt");
     if (!guess_valid(&p1))
@@ -1567,6 +1693,7 @@ bool testing_e(void)
         return false;
     }
     puzzle_destroy(&p1);
+    printf("Clear e1\n");
 
     // test case 2
     puzzle p2 = read_puzzle_from_file("puzzle1partial2.txt");
@@ -1576,6 +1703,7 @@ bool testing_e(void)
         return false;
     }
     puzzle_destroy(&p2);
+    printf("Clear e\n");
 
     return true;
 }
@@ -1586,8 +1714,7 @@ bool testing_f(void)
     puzzle p1 = read_puzzle_from_file("puzzle3partial2.txt");
     p1 = apply_guess(&p1);
     // puzzle_print(&p1);
-    if (p1.board[5][3].guess == false && p1.board[5][4].guess == false && p1.board[5][3].number == 6 &&
-        p1.board[5][4].number == 3 && p1.constraintsLen == 0)
+    if (p1.board[5][3].guess == false && p1.board[5][4].guess == false && p1.board[5][3].number == 6 && p1.board[5][4].number == 3 && p1.constraintsLen == 0)
     {
         puzzle_destroy(&p1);
     }
@@ -1742,8 +1869,8 @@ int main(void)
     assert(testing_b());
     assert(testing_c());
     assert(testing_d());
-    // assert(testing_e());
-    // assert(testing_f());
+    assert(testing_e());
+    assert(testing_f());
     // assert(testing_g());
 
     // assert(testing_solve_kenken());
