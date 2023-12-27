@@ -875,11 +875,11 @@ void popFirstConstraint(puzzle *puz)
         for (int i = 0; i < puz->constraintsLen - 1; i++)
         {
             newConstraints[i] = constraint_create(puz->constraints[i + 1].letter, puz->constraints[i + 1].number, puz->constraints[i + 1].symbol);
-            printConstraint(newConstraints[i]); // testing line
+            // printConstraint(newConstraints[i]); // testing line
         }
         free(puz->constraints);
         puz->constraintsLen--;
-        printf("Constraintslen = %d\n", puz->constraintsLen);
+        // printf("Constraintslen = %d\n", puz->constraintsLen);
         puz->constraints = newConstraints;
     }
 }
@@ -918,6 +918,20 @@ puzzle apply_guess(puzzle *puz)
 Consider using some of the functions defined in a-f
 */
 
+/*
+    Write the function neighbours which takes a *puzzle and
+    returns puzArr (This is the key function that will be used
+    by solve_kenken). It takes a *puzzle, and returns an array
+    of the valid next puzzles obtainable by either filling in
+    the "first" cell for the string defined in the first constraint
+    with a guess, or by applying each guess in the puzzle, so long
+    as the guesses are all valid. It also returns the length of the
+    array. If the guess is not valid, the guess is not applied and
+    no neighbour is generated from that guess. Therefore, if no neighbours
+    exist the length of puzzles will be zero. The neighbours in the
+    returned list should be increasing order of the guess value.
+*/
+
 puzArr neighbors(puzzle *puz)
 {
     /*
@@ -926,8 +940,37 @@ puzArr neighbors(puzzle *puz)
      */
     puzzle temp = puzzle_deep_copy(puz);
     puzArr nbrs;
-
-    // Complete your code here....
+    posn firstBlank = find_blank(&temp);
+    printf("OK?\n");
+    if (firstBlank.x == -2 && firstBlank.y == -2)
+    {
+        nbrs.arr = NULL;
+        nbrs.len = 0;
+    }
+    else if (firstBlank.x == -1 && firstBlank.y == -1)
+    {
+        if (guess_valid(&temp))
+        {
+            nbrs.len = 1;
+            nbrs.arr = malloc(sizeof(puzzle));
+            nbrs.arr[0] = apply_guess(&temp);
+        }
+        else
+        {
+            nbrs.arr = NULL;
+            nbrs.len = 0;
+        }
+    }
+    else
+    {
+        numArr availableValues = available_vals(&temp, firstBlank);
+        nbrs.len = availableValues.len;
+        nbrs.arr = malloc(sizeof(puzzle) * availableValues.len);
+        for (int i = 0; i < availableValues.len; i++)
+        {
+            nbrs.arr[i] = fill_in_guess(&temp, firstBlank, availableValues.arr[i]);
+        }
+    }
 
     puzzle_destroy(&temp);
     return nbrs;
@@ -1600,6 +1643,7 @@ bool testing_b(void)
         free(usedCol.arr);
         puzzle_destroy(&p3);
         printf("Clear b3\n");
+        return true;
     }
     else
     {
@@ -1734,6 +1778,7 @@ bool testing_g(void)
     puzzle temp1 = read_puzzle_from_file("puzzle1partial3.txt");
     puzzle temp2 = read_puzzle_from_file("puzzle1partial4.txt");
     puzArr puzzles = neighbors(&p1);
+
     // puzzle_print(&puzzles.arr[0]);
     if (puzzles.len == 2 && puzzle_equal(puzzles.arr[0], temp1) && puzzle_equal(puzzles.arr[1], temp2))
     {
@@ -1871,7 +1916,7 @@ int main(void)
     assert(testing_d());
     assert(testing_e());
     assert(testing_f());
-    // assert(testing_g());
+    assert(testing_g());
 
     // assert(testing_solve_kenken());
     // assert(testing_solve_kenken_visual());
