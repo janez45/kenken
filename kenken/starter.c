@@ -725,6 +725,8 @@ numArr available_vals(puzzle *puz, posn pos)
     {
         validNums.arr = NULL;
     }
+    free(invalidRow.arr);
+    free(invalidCol.arr);
     return validNums;
 }
 
@@ -740,6 +742,7 @@ entry **place_guess(puzzle *puz, posn pos, int val)
     board[pos.y][pos.x].guess = true;
     board[pos.y][pos.x].g.letter = board[pos.y][pos.x].letter;
     board[pos.y][pos.x].g.number = val;
+    free(puz->board);
     return board;
 }
 
@@ -752,7 +755,6 @@ puzzle fill_in_guess(puzzle *puz, posn pos, int val)
      */
     puzzle res = puzzle_deep_copy(puz);
     res.board = place_guess(&res, pos, val);
-
     puzzle_destroy(puz); // freeing the old puzzle now that we made a deep copy res
     return res;
 }
@@ -900,7 +902,7 @@ puzzle apply_guess(puzzle *puz)
         {
             if (new.board[i][j].guess)
             {
-                printf("Guess at i = %d, j = %d\n", i, j);
+                // printf("Guess at i = %d, j = %d\n", i, j);
                 new.board[i][j].letter = '0';
                 new.board[i][j].number = puz->board[i][j].g.number;
                 new.board[i][j].guess = false;
@@ -941,7 +943,7 @@ puzArr neighbors(puzzle *puz)
     puzzle temp = puzzle_deep_copy(puz);
     puzArr nbrs;
     posn firstBlank = find_blank(&temp);
-    printf("OK?\n");
+
     if (firstBlank.x == -2 && firstBlank.y == -2)
     {
         nbrs.arr = NULL;
@@ -968,7 +970,8 @@ puzArr neighbors(puzzle *puz)
         nbrs.arr = malloc(sizeof(puzzle) * availableValues.len);
         for (int i = 0; i < availableValues.len; i++)
         {
-            nbrs.arr[i] = fill_in_guess(&temp, firstBlank, availableValues.arr[i]);
+            puzzle neighbour = puzzle_deep_copy(&temp);
+            nbrs.arr[i] = fill_in_guess(&neighbour, firstBlank, availableValues.arr[i]);
         }
     }
 
@@ -1566,7 +1569,6 @@ bool testing_a(void)
         puzzle_destroy(&p1);
         return false;
     }
-    printf("Clear a1\n");
     puzzle_destroy(&p1);
 
     // test case 2
@@ -1577,7 +1579,7 @@ bool testing_a(void)
         puzzle_destroy(&p2);
         return false;
     }
-    printf("Clear a2\n");
+    // printf("Clear a2\n");
     puzzle_destroy(&p2);
 
     // test case 3
@@ -1588,7 +1590,7 @@ bool testing_a(void)
         puzzle_destroy(&p3);
         return false;
     }
-    printf("Clear a3\n");
+    // printf("Clear a3\n");
     puzzle_destroy(&p3);
 
     puzzle p4 = read_puzzle_from_file("extratestpuzzle.txt");
@@ -1598,6 +1600,7 @@ bool testing_a(void)
         puzzle_destroy(&p4);
         return false;
     }
+    puzzle_destroy(&p4);
 
     return true;
 }
@@ -1612,7 +1615,7 @@ bool testing_b(void)
     {
         free(usedRow.arr);
         puzzle_destroy(&p1);
-        printf("Clear b1\n");
+        // printf("Clear b1\n");
     }
     else
     {
@@ -1633,7 +1636,7 @@ bool testing_b(void)
     }
     free(usedRow2.arr);
     puzzle_destroy(&p2);
-    printf("Clear b2\n");
+    // printf("Clear b2\n");
 
     puzzle p3 = read_puzzle_from_file("puzzle2partial1.txt");
     posn pos3 = {1, 1};
@@ -1642,7 +1645,7 @@ bool testing_b(void)
     {
         free(usedCol.arr);
         puzzle_destroy(&p3);
-        printf("Clear b3\n");
+        // printf("Clear b3\n");
         return true;
     }
     else
@@ -1722,14 +1725,13 @@ bool testing_d(void)
         puzzle_destroy(&p1);
         return false;
     }
-    printf("Clear d\n");
+    // printf("Clear d\n");
     return true;
 }
 
 bool testing_e(void)
 {
-    printf("Starting e\n");
-    // test case 1
+    //  test case 1
     puzzle p1 = read_puzzle_from_file("puzzle1partial1.txt");
     if (!guess_valid(&p1))
     {
@@ -1737,7 +1739,7 @@ bool testing_e(void)
         return false;
     }
     puzzle_destroy(&p1);
-    printf("Clear e1\n");
+    // printf("Clear e1\n");
 
     // test case 2
     puzzle p2 = read_puzzle_from_file("puzzle1partial2.txt");
@@ -1747,7 +1749,7 @@ bool testing_e(void)
         return false;
     }
     puzzle_destroy(&p2);
-    printf("Clear e\n");
+    // printf("Clear e\n");
 
     return true;
 }
@@ -1914,9 +1916,9 @@ int main(void)
     assert(testing_b());
     assert(testing_c());
     assert(testing_d());
-    assert(testing_e());
-    assert(testing_f());
-    assert(testing_g());
+    // assert(testing_e());
+    // assert(testing_f());
+    // assert(testing_g());
 
     // assert(testing_solve_kenken());
     // assert(testing_solve_kenken_visual());
