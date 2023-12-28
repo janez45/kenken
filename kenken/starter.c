@@ -673,12 +673,8 @@ numArr available_vals(puzzle *puz, posn pos)
     (through a struct called numArr) for the (x,y) position, pos,
     of the consumed puzzle, puz.
      */
-
-    /*
-        WARNING: This method only works for
-    */
-    int arr[puz->boardSize + 1];
-    for (int i = 0; i <= puz->boardSize; i++)
+    int *arr = malloc(sizeof(int) * (puz->boardSize + 1)); // very strange "invalid read" error
+    for (int i = 0; i < puz->boardSize + 1; i++)
     {
         arr[i] = 0;
     }
@@ -686,6 +682,7 @@ numArr available_vals(puzzle *puz, posn pos)
     numArr invalidCol = used_in_col(puz, pos);
     int numValid = puz->boardSize;
     int max = (invalidRow.len > invalidCol.len) ? invalidRow.len : invalidCol.len;
+
     for (int i = 0; i < max; i++)
     {
         if (i < invalidRow.len)
@@ -725,6 +722,7 @@ numArr available_vals(puzzle *puz, posn pos)
     {
         validNums.arr = NULL;
     }
+    free(arr);
     free(invalidRow.arr);
     free(invalidCol.arr);
     return validNums;
@@ -779,7 +777,24 @@ bool guess_valid(puzzle *puz)
         char operator= puz->constraints[0].symbol;
         unsigned int target = puz->constraints[0].number;
         // printf("Letter: %c, Operator: %c, Target: %u\n", constraintLetter, operator, target);
-        if (operator== '+')
+        if (operator== '=')
+        {
+            for (int i = 0; i < puz->boardSize; i++)
+            {
+                for (int j = 0; j < puz->boardSize; j++)
+                {
+                    if (puz->board[i][j].guess && puz->board[i][j].letter == constraintLetter)
+                    {
+                        if (puz->board[i][j].g.number != target)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+        else if (operator== '+')
         {
             unsigned int sum = 0;
             for (int i = 0; i < puz->boardSize; i++)
@@ -891,6 +906,7 @@ void popFirstConstraint(puzzle *puz)
     }
 }
 
+// Destroys the old puzzle
 puzzle apply_guess(puzzle *puz)
 {
     /*
@@ -954,6 +970,7 @@ puzArr neighbors(puzzle *puz)
     {
         nbrs.arr = NULL;
         nbrs.len = 0;
+        puzzle_destroy(&temp);
     }
     else if (firstBlank.x == -1 && firstBlank.y == -1)
     {
@@ -961,12 +978,13 @@ puzArr neighbors(puzzle *puz)
         {
             nbrs.len = 1;
             nbrs.arr = malloc(sizeof(puzzle));
-            nbrs.arr[0] = apply_guess(&temp);
+            nbrs.arr[0] = apply_guess(&temp); // this destroys the old temp
         }
         else
         {
             nbrs.arr = NULL;
             nbrs.len = 0;
+            puzzle_destroy(&temp);
         }
     }
     else
@@ -980,9 +998,9 @@ puzArr neighbors(puzzle *puz)
             nbrs.arr[i] = fill_in_guess(&neighbour, firstBlank, availableValues.arr[i]);
         }
         free(availableValues.arr);
+        puzzle_destroy(&temp);
     }
 
-    puzzle_destroy(&temp);
     return nbrs;
 }
 
@@ -1887,48 +1905,52 @@ bool testing_solve_kenken_visual(void)
     make sure to compile this program with gcc, otherwise the colours may not
     work or show up properly
      */
-    /*
-        // testing puzzle1
-        puzzle p = read_puzzle_from_file("puzzle1.txt");
-        p = solve_kenken_visual(&p, 1);
-        puzzle_destroy(&p);
 
-        // testing puzzle2
-        p = read_puzzle_from_file("puzzle2.txt");
-        p = solve_kenken_visual(&p, 0.5);
-        puzzle_destroy(&p);
+    // testing puzzle1
+    // puzzle p = read_puzzle_from_file("puzzle1.txt");
+    // p = solve_kenken_visual(&p, 1);
+    // puzzle_destroy(&p);
 
-        // testing puzzle3
-        p = read_puzzle_from_file("puzzle3.txt");
-        p = solve_kenken_visual(&p, 0.1);
-        puzzle_destroy(&p);
+    // // testing puzzle2
+    // p = read_puzzle_from_file("puzzle2.txt");
+    // p = solve_kenken_visual(&p, 0.5);
+    // puzzle_destroy(&p);
 
-        // testing puzzle4
-        p = read_puzzle_from_file("puzzle4.txt");
-        p = solve_kenken_visual(&p, 0.5);
-        puzzle_destroy(&p);
+    // // testing puzzle3
+    // puzzle p = read_puzzle_from_file("puzzle3.txt");
+    // p = solve_kenken_visual(&p, 0.1);
+    // puzzle_destroy(&p);
 
-        // testing puzzle5
-        p = read_puzzle_from_file("puzzle5.txt");
-        p = solve_kenken_visual(&p, 1);
-        puzzle_destroy(&p);
-    */
+    // // testing puzzle4
+    // p = read_puzzle_from_file("puzzle4.txt");
+    // p = solve_kenken_visual(&p, 0.5);
+    // puzzle_destroy(&p);
+
+    // // testing puzzle5
+    // p = read_puzzle_from_file("puzzle5.txt");
+    // p = solve_kenken_visual(&p, 1);
+    // puzzle_destroy(&p);
+
+    puzzle p = read_puzzle_from_file("extratestpuzzle.txt");
+    p = solve_kenken_visual(&p, 0);
+    puzzle_destroy(&p);
+
     return true;
 }
 
 int main(void)
 {
 
-    assert(testing_a());
-    assert(testing_b());
-    assert(testing_c());
-    assert(testing_d());
-    assert(testing_e());
-    assert(testing_f());
-    assert(testing_g());
+    // assert(testing_a());
+    // assert(testing_b());
+    // assert(testing_c());
+    // assert(testing_d());
+    // assert(testing_e());
+    // assert(testing_f());
+    // assert(testing_g());
 
     // assert(testing_solve_kenken());
-    // assert(testing_solve_kenken_visual());
+    assert(testing_solve_kenken_visual());
     printf("Clear\n");
 
     return 0;

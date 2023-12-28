@@ -1,5 +1,5 @@
 4
-Guess(a,5) b b 3
+Guess(a,4) b b 3
 a d Guess(e,3) e
 2 d 1 g
 f Guess(w,2) i i

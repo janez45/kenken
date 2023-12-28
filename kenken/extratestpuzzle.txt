@@ -1,11 +1,20 @@
-4
-3 b b c
-1 2 1 4
-f 3 g g
-f h i i
-b 3 -
-c 3 =
-f 3 -
-g 2 /
-h 4 =
-i 1 -
+6
+a a b b b c
+a a d b e c
+f g g h e c
+f i h h j j
+f k k j j l
+m m m l l l
+a 13 +
+b 180 *
+c 9 +
+d 2 +
+e 20 *
+f 15 +
+g 6 *
+h 11 +
+i 3 +
+j 9 +
+k 2 /
+l 18 +
+m 8 +
