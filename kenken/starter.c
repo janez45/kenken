@@ -1931,7 +1931,7 @@ bool testing_solve_kenken_visual(void)
     // p = solve_kenken_visual(&p, 1);
     // puzzle_destroy(&p);
 
-    puzzle p = read_puzzle_from_file("extratestpuzzle.txt");
+    puzzle p = read_puzzle_from_file("anotherpuzzle.txt");
     p = solve_kenken_visual(&p, 0);
     puzzle_destroy(&p);
 

@@ -1,0 +1,13 @@
+4
+a a b c
+d e b f
+d e g f
+h h g g
+a 2 /
+b 7 +
+c 4 =
+d 1 -
+e 3 -
+f 2 -
+g 4 *
+h 1 -
