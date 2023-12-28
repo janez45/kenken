@@ -742,6 +742,13 @@ entry **place_guess(puzzle *puz, posn pos, int val)
     board[pos.y][pos.x].guess = true;
     board[pos.y][pos.x].g.letter = board[pos.y][pos.x].letter;
     board[pos.y][pos.x].g.number = val;
+    if (puz->boardSize > 0) // to fully free the board
+    {
+        for (int i = 0; i < puz->boardSize; i++)
+        {
+            free(puz->board[i]);
+        }
+    }
     free(puz->board);
     return board;
 }
@@ -1916,8 +1923,8 @@ int main(void)
     assert(testing_b());
     assert(testing_c());
     assert(testing_d());
-    // assert(testing_e());
-    // assert(testing_f());
+    assert(testing_e());
+    assert(testing_f());
     // assert(testing_g());
 
     // assert(testing_solve_kenken());
