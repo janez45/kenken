@@ -1,1 +1,1 @@
-A kenken game solver that reads puzzle input files
+A kenken game solving algorithm, coded purely in C
