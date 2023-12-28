@@ -884,11 +884,9 @@ void popFirstConstraint(puzzle *puz)
         for (int i = 0; i < puz->constraintsLen - 1; i++)
         {
             newConstraints[i] = constraint_create(puz->constraints[i + 1].letter, puz->constraints[i + 1].number, puz->constraints[i + 1].symbol);
-            // printConstraint(newConstraints[i]); // testing line
         }
         free(puz->constraints);
         puz->constraintsLen--;
-        // printf("Constraintslen = %d\n", puz->constraintsLen);
         puz->constraints = newConstraints;
     }
 }
@@ -919,6 +917,7 @@ puzzle apply_guess(puzzle *puz)
         }
     }
     popFirstConstraint(&new);
+    puzzle_destroy(puz);
     return new;
 }
 
@@ -980,6 +979,7 @@ puzArr neighbors(puzzle *puz)
             puzzle neighbour = puzzle_deep_copy(&temp);
             nbrs.arr[i] = fill_in_guess(&neighbour, firstBlank, availableValues.arr[i]);
         }
+        free(availableValues.arr);
     }
 
     puzzle_destroy(&temp);
@@ -1925,7 +1925,7 @@ int main(void)
     assert(testing_d());
     assert(testing_e());
     assert(testing_f());
-    // assert(testing_g());
+    assert(testing_g());
 
     // assert(testing_solve_kenken());
     // assert(testing_solve_kenken_visual());
